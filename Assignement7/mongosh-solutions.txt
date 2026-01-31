@@ -1,0 +1,315 @@
+use library2
+switched to db library2
+db.createCollection("books", {
+                validator: {
+                    $jsonSchema: {
+                        bsonType: "object",
+                        required: ["title"],
+                        properties: {
+                            title: {
+                                bsonType: "string",
+                                minLength: 1,
+                            },
+                        },
+                    },
+                },
+            });
+----------------------------------------------------
+
+{ ok: 1 }
+
+
+//2
+
+db.author.insertOne( {name: "author1", nationality: "British"})
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  insertedId: ObjectId('697e725c02b8283856bfc1fc')
+}
+
+//3
+
+db.createCollection("logs",{capped:true,size:1024 * 1024 })
+----------------------------------------------------
+
+{ ok: 1 }
+
+//4
+
+db.books.createIndex({title:1})
+----------------------------------------------------
+
+title_1
+
+//5
+
+db.books.insertOne({
+    title: "book1",
+    author:"Ali",
+   year:1937,
+   genres:["fantasy","adventure"]
+})
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  insertedId: ObjectId('697e742302b8283856bfc1fd')
+}
+
+//6 
+
+db.books.insertMany([
+  { title: "Book1", year: 1995, genres: ["Science Fiction"] },
+  { title: "Book2", year: 2005, genres: ["Science Fiction"] },
+  { title: "Book3", year: 2010, genres: ["Science Fiction"] }
+])
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('697e750502b8283856bfc1ff'),
+    '1': ObjectId('697e750502b8283856bfc200'),
+    '2': ObjectId('697e750502b8283856bfc201')
+  }
+}
+
+//7
+
+db.logs.insertOne({
+  bookId: ObjectId("697e48ac9150843e9d365391"),
+  action: "borrowed",
+});
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  insertedId: ObjectId('697e75db02b8283856bfc202')
+}
+
+//8
+
+db.books.updateOne(
+  { title: "Future" },
+  { $set: { year: 2022 } }
+)
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 0,
+  modifiedCount: 0,
+  upsertedCount: 0
+}
+
+//9
+
+db.books.findOne({ title: "Book1" })
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc1ff'),
+  title: 'Book1',
+  year: 1995,
+  genres: [
+    'Drama'
+  ]
+}
+
+//10
+
+db.books.find({ year: { $gte: 1990, $lte: 2010 } })
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc200'),
+  title: 'Book2',
+  year: 2005,
+  genres: [
+    'Science Fiction'
+  ]
+}
+{
+  _id: ObjectId('697e750502b8283856bfc201'),
+  title: 'Book3',
+  year: 2010,
+  genres: [
+    'Fantasy'
+  ]
+}
+
+//11
+db.books.find({ genres: "Science Fiction" })
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc200'),
+  title: 'Book2',
+  year: 2005,
+  genres: [
+    'Science Fiction'
+  ]
+}
+
+//12
+
+db.books.find().sort({ year: -1 }).skip(2).limit(3)
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e742302b8283856bfc1fd'),
+  title: 'book1',
+  author: 'Ali',
+  year: 1937,
+  genres: [
+    'fantasy',
+    'adventure'
+  ]
+}
+{
+  _id: ObjectId('697e74b802b8283856bfc1fe'),
+  title: 'book1',
+  author: 'Ali',
+  year: 1937,
+  genres: [
+    'fantasy',
+    'adventure'
+  ]
+}
+
+//13
+
+db.books.find({ year: { $type: "int" } })
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e74b802b8283856bfc1fe'),
+  title: 'book1',
+  author: 'Ali',
+  year: 1937,
+  genres: [
+    'fantasy',
+    'adventure'
+  ]
+}
+{
+  _id: ObjectId('697e750502b8283856bfc1ff'),
+  title: 'Book1',
+  year: 1995,
+  genres: [
+    'Drama'
+  ]
+}
+
+//14
+
+db.books.find({genres: { $nin: ["Horror", "Science Fiction"] }})
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc1ff'),
+  title: 'Book1',
+  year: 1995,
+  genres: [
+    'Drama'
+  ]
+}
+{
+  _id: ObjectId('697e750502b8283856bfc201'),
+  title: 'Book3',
+  year: 2010,
+  genres: [
+    'Fantasy'
+  ]
+}
+
+//15
+
+db.books.deleteMany({ year: { $lt: 2000 } })
+----------------------------------------------------
+
+{
+  acknowledged: true,
+  deletedCount: 3
+}
+
+//16
+
+db.books.aggregate([
+  { $match: { year: { $gt: 2000 } } },
+  { $sort: { year: -1 } }
+])
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc201'),
+  title: 'Book3',
+  year: 2010,
+  genres: [
+    'Fantasy'
+  ]
+}
+
+
+//17
+
+db.books.aggregate([
+  { $match: { year: { $gt: 2000 } } },
+  { $project: { title: 1, author: 1, year: 1, _id: 0 } }
+])
+----------------------------------------------------
+
+{
+  title: 'Book3',
+  year: 2010
+}
+{
+  title: 'Book2',
+  year: 2005
+}
+
+//18 
+
+db.books.aggregate([{ $unwind: "$genres" }])
+
+----------------------------------------------------
+{
+  _id: ObjectId('697e750502b8283856bfc200'),
+  title: 'Book2',
+  year: 2005,
+  genres: 'Science Fiction'
+}
+{
+  _id: ObjectId('697e750502b8283856bfc201'),
+  title: 'Book3',
+  year: 2010,
+  genres: 'Fantasy'
+}
+
+
+//19
+
+db.books.aggregate([
+  {
+    $lookup: {
+      from: "logs",
+      localField: "_id",
+      foreignField: "bookId",
+      as: "logs"
+    }
+  }
+])
+----------------------------------------------------
+
+{
+  _id: ObjectId('697e750502b8283856bfc201'),
+  title: 'Book3',
+  year: 2010,
+  genres: [
+    'Fantasy'
+  ],
+  logs: []
+}
